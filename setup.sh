@@ -435,14 +435,41 @@ log "Injecting Houtech custom theme into Pi-hole..."
 # Copy theme file into container
 docker cp "$SCRIPT_DIR/custom-theme/houtech.css" pihole:/tmp/houtech.css
 
-# Append to the main Pi-hole stylesheet
-docker exec pihole bash -c "cat /tmp/houtech.css >> /var/www/html/admin/style/pi-hole.css" || \
-docker exec pihole bash -c "cat /tmp/houtech.css >> /var/www/html/admin/style/vendor/pi-hole.min.css" || \
-log "WARNING: Could not inject theme CSS — Pi-hole admin path may have changed."
+# Try all known Pi-hole CSS paths across versions
+INJECTED=false
+for CSSPATH in \
+  "/var/www/html/admin/style/pi-hole.css" \
+  "/var/www/html/admin/style/vendor/pi-hole.min.css" \
+  "/var/www/html/admin/scripts/pi-hole/js/footer.js" \
+  "/etc/pihole/custom.list"; do
+  if docker exec pihole test -f "$CSSPATH" 2>/dev/null; then
+    docker exec pihole bash -c "cat /tmp/houtech.css >> $CSSPATH"
+    log "Houtech theme injected into $CSSPATH"
+    INJECTED=true
+    break
+  fi
+done
 
-# Inject custom logo if present
+# Fallback — find any .css file in the admin folder and inject
+if [ "$INJECTED" = false ]; then
+  FOUND=$(docker exec pihole find /var/www/html/admin -name "*.css" 2>/dev/null | head -1)
+  if [ -n "$FOUND" ]; then
+    docker exec pihole bash -c "cat /tmp/houtech.css >> $FOUND"
+    log "Houtech theme injected into fallback path: $FOUND"
+    INJECTED=true
+  fi
+fi
+
+if [ "$INJECTED" = false ]; then
+  log "WARNING: Could not inject theme — Pi-hole CSS not found. Skipping."
+fi
+
+# Inject custom logo
 if [ -f "$SCRIPT_DIR/custom-theme/houtechlogotransparent.png" ]; then
-  docker cp "$SCRIPT_DIR/custom-theme/houtechlogotransparent.png" pihole:/var/www/html/admin/img/logo.svg || true
+  docker cp "$SCRIPT_DIR/custom-theme/houtechlogotransparent.png" \
+    pihole:/var/www/html/admin/img/logo.png 2>/dev/null || \
+  docker cp "$SCRIPT_DIR/custom-theme/houtechlogotransparent.png" \
+    pihole:/var/www/html/admin/img/logo.svg 2>/dev/null || true
   log "Houtech logo injected."
 fi
 
