@@ -7,7 +7,14 @@
 set -e
 
 LOG="/var/log/houtech-setup.log"
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="/opt/houtech-setup"
+
+# Ensure setup directory always exists with assets from GitHub
+mkdir -p /opt/houtech-setup/custom-theme
+curl -fsSL "https://raw.githubusercontent.com/hawintallzallie-cyber/houtech/main/custom-theme/houtech.css" \
+  -o /opt/houtech-setup/custom-theme/houtech.css 2>/dev/null || true
+curl -fsSL "https://raw.githubusercontent.com/hawintallzallie-cyber/houtech/main/custom-theme/houtechlogotransparent.png" \
+  -o /opt/houtech-setup/custom-theme/houtechlogotransparent.png 2>/dev/null || true
 
 log() {
   echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG"
@@ -427,6 +434,11 @@ docker run -d \
 log "Pi-hole container started. Waiting 20 seconds for initialization..."
 sleep 20
 
+# Force set Pi-hole web password
+docker exec pihole pihole setpassword houtech2024 2>/dev/null || \
+docker exec pihole pihole -a -p houtech2024 2>/dev/null || true
+log "Pi-hole web password set to: houtech2024"
+
 # ------------------------------------------------------------
 # STEP 4b: INJECT HOUTECH CUSTOM THEME INTO PI-HOLE
 # ------------------------------------------------------------
@@ -435,41 +447,15 @@ log "Injecting Houtech custom theme into Pi-hole..."
 # Copy theme file into container
 docker cp "$SCRIPT_DIR/custom-theme/houtech.css" pihole:/tmp/houtech.css
 
-# Try all known Pi-hole CSS paths across versions
-INJECTED=false
-for CSSPATH in \
-  "/var/www/html/admin/style/pi-hole.css" \
-  "/var/www/html/admin/style/vendor/pi-hole.min.css" \
-  "/var/www/html/admin/scripts/pi-hole/js/footer.js" \
-  "/etc/pihole/custom.list"; do
-  if docker exec pihole test -f "$CSSPATH" 2>/dev/null; then
-    docker exec pihole bash -c "cat /tmp/houtech.css >> $CSSPATH"
-    log "Houtech theme injected into $CSSPATH"
-    INJECTED=true
-    break
-  fi
-done
-
-# Fallback — find any .css file in the admin folder and inject
-if [ "$INJECTED" = false ]; then
-  FOUND=$(docker exec pihole find /var/www/html/admin -name "*.css" 2>/dev/null | head -1)
-  if [ -n "$FOUND" ]; then
-    docker exec pihole bash -c "cat /tmp/houtech.css >> $FOUND"
-    log "Houtech theme injected into fallback path: $FOUND"
-    INJECTED=true
-  fi
-fi
-
-if [ "$INJECTED" = false ]; then
-  log "WARNING: Could not inject theme — Pi-hole CSS not found. Skipping."
-fi
+# Inject into confirmed Pi-hole CSS path
+docker exec pihole bash -c "cat /tmp/houtech.css >> /var/www/html/admin/style/pi-hole.css" && \
+  log "Houtech theme injected into pi-hole.css" || \
+  log "WARNING: Could not inject theme — skipping."
 
 # Inject custom logo
 if [ -f "$SCRIPT_DIR/custom-theme/houtechlogotransparent.png" ]; then
   docker cp "$SCRIPT_DIR/custom-theme/houtechlogotransparent.png" \
-    pihole:/var/www/html/admin/img/logo.png 2>/dev/null || \
-  docker cp "$SCRIPT_DIR/custom-theme/houtechlogotransparent.png" \
-    pihole:/var/www/html/admin/img/logo.svg 2>/dev/null || true
+    pihole:/var/www/html/admin/img/logo.png 2>/dev/null || true
   log "Houtech logo injected."
 fi
 
