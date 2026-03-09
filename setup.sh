@@ -13,8 +13,10 @@ SCRIPT_DIR="/opt/houtech-setup"
 mkdir -p /opt/houtech-setup/custom-theme
 curl -fsSL "https://raw.githubusercontent.com/hawintallzallie-cyber/houtech/main/custom-theme/houtech.css" \
   -o /opt/houtech-setup/custom-theme/houtech.css 2>/dev/null || true
-curl -fsSL "https://raw.githubusercontent.com/hawintallzallie-cyber/houtech/main/custom-theme/houtechlogotransparent.png" \
-  -o /opt/houtech-setup/custom-theme/houtechlogotransparent.png 2>/dev/null || true
+curl -fsSL "https://raw.githubusercontent.com/hawintallzallie-cyber/houtech/main/custom-theme/houtech.js" \
+  -o /opt/houtech-setup/custom-theme/houtech.js 2>/dev/null || true
+curl -fsSL "https://raw.githubusercontent.com/hawintallzallie-cyber/houtech/main/custom-theme/transparent-logo.png" \
+  -o /opt/houtech-setup/custom-theme/transparent-logo.png 2>/dev/null || true
 
 log() {
   echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG"
@@ -444,18 +446,53 @@ log "Pi-hole web password set to: houtech2024"
 # ------------------------------------------------------------
 log "Injecting Houtech custom theme into Pi-hole..."
 
-# Copy theme file into container
+# Copy theme files into container
 docker cp "$SCRIPT_DIR/custom-theme/houtech.css" pihole:/tmp/houtech.css
+docker cp "$SCRIPT_DIR/custom-theme/houtech.js"  pihole:/tmp/houtech.js
 
-# Inject into confirmed Pi-hole CSS path
+# Inject CSS
 docker exec pihole bash -c "cat /tmp/houtech.css >> /var/www/html/admin/style/pi-hole.css" && \
-  log "Houtech theme injected into pi-hole.css" || \
-  log "WARNING: Could not inject theme — skipping."
+  log "Houtech CSS injected." || \
+  log "WARNING: Could not inject CSS — skipping."
 
-# Inject custom logo
-if [ -f "$SCRIPT_DIR/custom-theme/houtechlogotransparent.png" ]; then
-  docker cp "$SCRIPT_DIR/custom-theme/houtechlogotransparent.png" \
-    pihole:/var/www/html/admin/img/logo.png 2>/dev/null || true
+# Copy JS into Pi-hole's JS directory
+docker exec pihole bash -c "cp /tmp/houtech.js /var/www/html/admin/scripts/pi-hole/js/houtech.js" && \
+  log "Houtech JS copied." || true
+
+# Inject script tag into Pi-hole layout/footer PHP and login page
+docker exec pihole bash -c "
+  INJECTED=false
+  # Target all key PHP files including login
+  for LAYOUT in \
+    /var/www/html/admin/footer.php \
+    /var/www/html/admin/layout.php \
+    /var/www/html/admin/index.php \
+    /var/www/html/admin/login.php; do
+    if [ -f \"\$LAYOUT\" ]; then
+      if ! grep -q 'houtech.js' \"\$LAYOUT\"; then
+        echo '<script src=\"/admin/scripts/pi-hole/js/houtech.js\"></script>' >> \"\$LAYOUT\"
+        echo \"Injected into \$LAYOUT\"
+        INJECTED=true
+      fi
+    fi
+  done
+  # Fallback: find any PHP file with </body> and inject before it
+  if [ \"\$INJECTED\" = false ]; then
+    FOUND=\$(grep -rl '</body>' /var/www/html/admin/ 2>/dev/null | head -3)
+    for f in \$FOUND; do
+      if ! grep -q 'houtech.js' \"\$f\"; then
+        sed -i 's|</body>|<script src=\"/admin/scripts/pi-hole/js/houtech.js\"></script></body>|' \"\$f\"
+        echo \"Injected via sed into \$f\"
+      fi
+    done
+  fi
+" && log "Houtech JS injected into Pi-hole pages." || log "WARNING: Could not inject JS."
+
+# Inject custom logo — replace Pi-hole raspberry logo
+if [ -f "$SCRIPT_DIR/custom-theme/transparent-logo.png" ]; then
+  docker cp "$SCRIPT_DIR/custom-theme/transparent-logo.png" pihole:/var/www/html/admin/img/logo.png 2>/dev/null || true
+  docker cp "$SCRIPT_DIR/custom-theme/transparent-logo.png" pihole:/var/www/html/admin/img/logoLight.png 2>/dev/null || true
+  docker cp "$SCRIPT_DIR/custom-theme/transparent-logo.png" pihole:/var/www/html/admin/img/logoDark.png 2>/dev/null || true
   log "Houtech logo injected."
 fi
 
