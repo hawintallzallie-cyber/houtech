@@ -1,0 +1,12 @@
+#!/bin/bash
+FILE="/var/www/html/admin/login.lp"
+sed -i 's|<img src="<?=webhome?>img/logo.svg" alt="Pi-hole logo" class="loginpage-logo" width="140" height="202">|<img src="<?=webhome?>img/logo.png" alt="HouTech logo" class="loginpage-logo" width="140" height="140" style="object-fit:contain;">|g' "$FILE"
+sed -i 's|<span class="logo-lg" style="font-size: 25px;">Pi-<b>hole</b></span>|<span class="logo-lg" style="font-size: 25px; font-family: Share Tech Mono, monospace; letter-spacing: 3px;">HOU<b style="color:#a855f7;">TECH</b></span>|g' "$FILE"
+sed -i 's|href="https://docs.pi-hole.net/" rel="noopener noreferrer" target="_blank"><i class="fas fa-question-circle"></i> Documentation|href="https://houtech.org" rel="noopener noreferrer" target="_blank"><i class="fas fa-question-circle"></i> Documentation|g' "$FILE"
+sed -i 's|href="https://github.com/pi-hole/" rel="noopener noreferrer" target="_blank"><i class="fab fa-github"></i> GitHub|href="https://houtech.org" rel="noopener noreferrer" target="_blank"><i class="fab fa-github"></i> GitHub|g' "$FILE"
+sed -i 's|href="https://discourse.pi-hole.net/" rel="noopener noreferrer" target="_blank"><i class="fab fa-discourse"></i> Pi-hole Discourse|href="https://houtech.org" rel="noopener noreferrer" target="_blank"><i class="fab fa-discourse"></i> HouTech|g' "$FILE"
+sed -i 's|<strong><a href="https://pi-hole.net/donate/".*Donate.*useful\.|<strong><a href="https://houtech.org" rel="noopener noreferrer" target="_blank"><i class="fa fa-shield"></i> HouTech Network Solutions<\/a><\/strong>|g' "$FILE"
+sed -i 's|After installing Pi-hole for the first time|After installing HouTech for the first time|g' "$FILE"
+sed -i 's|Your Pi-hole has two-factor|Your HouTech system has two-factor|g' "$FILE"
+sed -i 's|log in to see Pi-hole diagnosis|log in to see HouTech diagnosis|g' "$FILE"
+echo "Done"
