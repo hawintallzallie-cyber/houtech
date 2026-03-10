@@ -450,50 +450,64 @@ log "Injecting Houtech custom theme into Pi-hole..."
 docker cp "$SCRIPT_DIR/custom-theme/houtech.css" pihole:/tmp/houtech.css
 docker cp "$SCRIPT_DIR/custom-theme/houtech.js"  pihole:/tmp/houtech.js
 
-# Inject CSS
+# Inject CSS into pi-hole.css
 docker exec pihole bash -c "cat /tmp/houtech.css >> /var/www/html/admin/style/pi-hole.css" && \
   log "Houtech CSS injected." || \
   log "WARNING: Could not inject CSS — skipping."
 
-# Copy JS into Pi-hole's JS directory
-docker exec pihole bash -c "cp /tmp/houtech.js /var/www/html/admin/scripts/pi-hole/js/houtech.js" && \
-  log "Houtech JS copied." || true
+# Copy JS into correct Pi-hole v6 JS directory
+docker exec pihole bash -c "cp /tmp/houtech.js /var/www/html/admin/scripts/js/houtech.js" && \
+  log "Houtech JS copied to /scripts/js/" || \
+  log "WARNING: Could not copy JS."
 
-# Inject script tag into Pi-hole layout/footer PHP and login page
+# Append houtech.js to footer.js and login.js so it loads on every page
 docker exec pihole bash -c "
-  INJECTED=false
-  # Target all key PHP files including login
-  for LAYOUT in \
-    /var/www/html/admin/footer.php \
-    /var/www/html/admin/layout.php \
-    /var/www/html/admin/index.php \
-    /var/www/html/admin/login.php; do
-    if [ -f \"\$LAYOUT\" ]; then
-      if ! grep -q 'houtech.js' \"\$LAYOUT\"; then
-        echo '<script src=\"/admin/scripts/pi-hole/js/houtech.js\"></script>' >> \"\$LAYOUT\"
-        echo \"Injected into \$LAYOUT\"
-        INJECTED=true
+  for JSFILE in \
+    /var/www/html/admin/scripts/js/footer.js \
+    /var/www/html/admin/scripts/js/login.js; do
+    if [ -f \"\$JSFILE\" ]; then
+      if ! grep -q 'HOUTECH REBRANDING' \"\$JSFILE\"; then
+        echo '' >> \"\$JSFILE\"
+        cat /var/www/html/admin/scripts/js/houtech.js >> \"\$JSFILE\"
+        echo \"Appended houtech.js to \$JSFILE\"
       fi
     fi
   done
-  # Fallback: find any PHP file with </body> and inject before it
-  if [ \"\$INJECTED\" = false ]; then
-    FOUND=\$(grep -rl '</body>' /var/www/html/admin/ 2>/dev/null | head -3)
-    for f in \$FOUND; do
-      if ! grep -q 'houtech.js' \"\$f\"; then
-        sed -i 's|</body>|<script src=\"/admin/scripts/pi-hole/js/houtech.js\"></script></body>|' \"\$f\"
-        echo \"Injected via sed into \$f\"
-      fi
-    done
-  fi
-" && log "Houtech JS injected into Pi-hole pages." || log "WARNING: Could not inject JS."
+" && log "Houtech JS injected into footer.js and login.js." || log "WARNING: Could not inject JS."
 
-# Inject custom logo — replace Pi-hole raspberry logo
+# ── PATCH LOGIN PAGE ──────────────────────────────────────────
+log "Patching login page..."
+docker exec pihole bash -c "
+  FILE=/var/www/html/admin/login.lp
+
+  # Replace logo img — use our logo, bigger size, hide alt text issues
+  sed -i 's|<img src=\"<?=webhome?>img/logo.svg\" alt=\"Pi-hole logo\" class=\"loginpage-logo\" width=\"140\" height=\"202\">|<img src=\"<?=webhome?>img/logo.png\" alt=\"HouTech logo\" class=\"loginpage-logo\" width=\"200\" height=\"200\" style=\"object-fit:contain;\">|g' \"\$FILE\"
+
+  # Remove the Pi-hole / HOUTECH text line below the logo
+  sed -i 's|<div class=\"panel-title text-center\">.*logo-lg.*</div>||g' \"\$FILE\"
+
+  # Replace footer links
+  sed -i 's|href=\"https://docs.pi-hole.net/\"|href=\"https://houtech.org\"|g' \"\$FILE\"
+  sed -i 's|href=\"https://github.com/pi-hole/\"|href=\"https://houtech.org\"|g' \"\$FILE\"
+  sed -i 's|href=\"https://discourse.pi-hole.net/\"|href=\"https://houtech.org\"|g' \"\$FILE\"
+  sed -i 's|Pi-hole Discourse|HouTech|g' \"\$FILE\"
+
+  # Replace donate section
+  sed -i 's|href=\"https://pi-hole.net/donate/\".*>|href=\"https://houtech.org\" rel=\"noopener noreferrer\" target=\"_blank\">|g' \"\$FILE\"
+  sed -i 's|<i class=\"fa fa-heart text-red\"></i> Donate</a></strong> if you found this useful.|<i class=\"fa fa-shield\"></i> HouTech Network Solutions</a></strong>|g' \"\$FILE\"
+
+  # Replace remaining Pi-hole text references
+  sed -i 's|After installing Pi-hole for the first time|After installing HouTech for the first time|g' \"\$FILE\"
+  sed -i 's|Your Pi-hole has two-factor|Your HouTech system has two-factor|g' \"\$FILE\"
+  sed -i 's|log in to see Pi-hole diagnosis|log in to see HouTech diagnosis|g' \"\$FILE\"
+  sed -i 's|pihole setpassword|houtech setpassword|g' \"\$FILE\"
+" && log "Login page patched." || log "WARNING: Could not patch login page."
+
+# ── COPY LOGO INTO PI-HOLE IMG DIRECTORY ─────────────────────
 if [ -f "$SCRIPT_DIR/custom-theme/transparent-logo.png" ]; then
   docker cp "$SCRIPT_DIR/custom-theme/transparent-logo.png" pihole:/var/www/html/admin/img/logo.png 2>/dev/null || true
-  docker cp "$SCRIPT_DIR/custom-theme/transparent-logo.png" pihole:/var/www/html/admin/img/logoLight.png 2>/dev/null || true
-  docker cp "$SCRIPT_DIR/custom-theme/transparent-logo.png" pihole:/var/www/html/admin/img/logoDark.png 2>/dev/null || true
-  log "Houtech logo injected."
+  docker cp "$SCRIPT_DIR/custom-theme/transparent-logo.png" pihole:/var/www/html/admin/img/logo-bw.svg 2>/dev/null || true
+  log "Houtech logo injected into /img/."
 fi
 
 log "[6/6] Installing Pi-hole watchdog service..."
