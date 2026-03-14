@@ -1,28 +1,41 @@
 /* ============================================================
-   HOUTECH PI-HOLE THEME v4
-   Targets Pi-hole v6 default-dark theme class names
+   HOUTECH PI-HOLE THEME v5 — Direct override of default-dark
    ============================================================ */
 
 @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap');
 
-/* ---- BODY ---- */
+/* Override Pi-hole dark theme CSS variables */
+:root {
+  --datatable-bgcolor: rgba(26, 16, 64, 0.8) !important;
+  --overlay-bgcolor: var(--datatable-bgcolor) !important;
+}
+
+html { color-scheme: dark; }
+
+/* Body — override #353c42 */
 body {
-  background-color: #0a0a14 !important;
+  background-color: #13132a !important;
   color: #d1d5e8 !important;
   font-family: 'Rajdhani', sans-serif !important;
 }
 
-/* ---- WRAPPER ---- */
-.wrapper {
+h4 { color: #a855f7 !important; }
+
+/* Wrapper and sidebar — override #272c30 */
+.wrapper,
+.main-sidebar,
+.left-side {
   background-color: #0a0a14 !important;
 }
 
-.content-wrapper {
-  background-color: #0f0f1a !important;
+/* Content wrapper — override #353c42 */
+.content-wrapper,
+.right-side {
+  background-color: #13132a !important;
   color: #d1d5e8 !important;
 }
 
-/* ---- HEADER ---- */
+/* Header — override #272c30 */
 .main-header .navbar {
   background-color: #0a0a14 !important;
   border-bottom: 1px solid #7c3aed !important;
@@ -35,19 +48,19 @@ body {
 }
 
 .main-header .logo .logo-lg::before {
-  content: 'HOU' !important;
-  color: #ffffff !important;
-  font-family: 'Share Tech Mono', monospace !important;
-  font-size: 16px !important;
-  letter-spacing: 3px !important;
+  content: 'HOU';
+  color: #ffffff;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 16px;
+  letter-spacing: 3px;
 }
 
 .main-header .logo .logo-lg::after {
-  content: 'TECH' !important;
-  color: #a855f7 !important;
-  font-family: 'Share Tech Mono', monospace !important;
-  font-size: 16px !important;
-  letter-spacing: 3px !important;
+  content: 'TECH';
+  color: #a855f7;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 16px;
+  letter-spacing: 3px;
 }
 
 .main-header .logo img,
@@ -56,13 +69,7 @@ body {
   display: none !important;
 }
 
-/* ---- SIDEBAR ---- */
-.main-sidebar,
-.left-side {
-  background-color: #080810 !important;
-  border-right: 1px solid #1e1e3a !important;
-}
-
+/* Sidebar menu */
 .sidebar-menu > li > a {
   color: #6b7280 !important;
   border-left: 3px solid transparent !important;
@@ -70,156 +77,163 @@ body {
   font-weight: 600 !important;
   letter-spacing: 1px !important;
   text-transform: uppercase !important;
-  font-size: 12px !important;
 }
 
-.sidebar-menu > li.active > a,
-.sidebar-menu > li:hover > a {
-  background: rgba(124, 58, 237, 0.15) !important;
-  color: #a855f7 !important;
-  border-left: 3px solid #7c3aed !important;
+.sidebar-menu > li:hover > a,
+.sidebar-menu > li > a:focus,
+.sidebar-menu > li.active > a {
+  color: #ffffff !important;
+  background-color: rgba(124, 58, 237, 0.2) !important;
+  border-color: #7c3aed !important;
 }
 
 .sidebar-menu > li > .treeview-menu {
   background-color: #080810 !important;
 }
 
-/* ---- STAT BOXES ---- */
-.small-box {
-  border-radius: 4px !important;
-}
+.sidebar a { color: #a855f7 !important; }
+.sidebar-menu > li.header { background-color: #080810 !important; color: #6b7280 !important; }
 
-.small-box.bg-aqua { background-color: #1a0f40 !important; border: 1px solid #7c3aed !important; }
-.small-box.bg-red   { background-color: #1a0f40 !important; border: 1px solid #7c3aed !important; }
-.small-box.bg-yellow{ background-color: #1a0f40 !important; border: 1px solid #7c3aed !important; }
-.small-box.bg-green { background-color: #1a0f40 !important; border: 1px solid #7c3aed !important; }
+/* Stat boxes — override bg-aqua, bg-red, bg-yellow, bg-green */
+.bg-aqua  { background-color: #1a0f40 !important; }
+.bg-red    { background-color: #1a0f40 !important; }
+.bg-yellow { background-color: #1a0f40 !important; }
+.bg-green  { background-color: #1a0f40 !important; }
 
-.small-box .inner p {
-  color: #a855f7 !important;
-  font-family: 'Rajdhani', sans-serif !important;
-  font-weight: 600 !important;
-  text-transform: uppercase !important;
-  letter-spacing: 1px !important;
-}
-
-.small-box .inner h3 {
-  color: #ffffff !important;
-  font-family: 'Share Tech Mono', monospace !important;
-}
-
+.small-box { border: 1px solid #7c3aed !important; border-radius: 4px !important; }
+.small-box .inner p { color: #a855f7 !important; font-family: 'Rajdhani', sans-serif !important; font-weight: 600 !important; text-transform: uppercase !important; }
+.small-box .inner h3 { color: #ffffff !important; font-family: 'Share Tech Mono', monospace !important; }
 .small-box .icon { color: rgba(168, 85, 247, 0.15) !important; }
+.small-box-footer { background: rgba(91, 33, 182, 0.3) !important; color: #a855f7 !important; }
+.small-box-footer:hover { background: rgba(91, 33, 182, 0.5) !important; color: #ffffff !important; }
 
-.small-box-footer {
-  background: rgba(91, 33, 182, 0.3) !important;
-  color: #a855f7 !important;
+/* Boxes — override #272c30 */
+.box,
+.box-footer,
+.info-box,
+.box-comment,
+.comment-text {
+  background-color: #0f0f1a !important;
+  color: #d1d5e8 !important;
+  border: 1px solid #2a2a4a !important;
 }
 
-.small-box-footer:hover {
-  background: rgba(91, 33, 182, 0.5) !important;
-  color: #ffffff !important;
-}
+.box-solid,
+.box { border: 1px solid #2a2a4a !important; }
 
-/* ---- BOXES ---- */
-.box {
-  background: #13132a !important;
-  border: 1px solid #1e1e3a !important;
-  border-top: 2px solid #7c3aed !important;
-  box-shadow: 0 2px 15px rgba(0,0,0,0.5) !important;
-}
+.box-header.with-border { border-bottom: 1px solid #2a2a4a !important; }
+.box-footer { border-top: 1px solid #2a2a4a !important; }
 
-.box-header {
-  background: transparent !important;
-  border-bottom: 1px solid #1e1e3a !important;
-  color: #ffffff !important;
-  font-family: 'Rajdhani', sans-serif !important;
-  font-weight: 700 !important;
-  text-transform: uppercase !important;
-  letter-spacing: 1px !important;
-}
+.box > .box-header,
+.box-solid > .box-header { color: #ffffff !important; font-family: 'Rajdhani', sans-serif !important; font-weight: 700 !important; text-transform: uppercase !important; }
 
-.box-title { color: #ffffff !important; }
-.box-body  { background: transparent !important; color: #d1d5e8 !important; }
-
-/* ---- TABLES ---- */
+/* Tables — override #2a2f34, #1e2226 */
 .table { color: #d1d5e8 !important; }
+.table > thead > tr > th,
+.table > tbody > tr > th,
+.table > tfoot > tr > th,
+.table > thead > tr > td,
+.table > tbody > tr > td,
+.table > tfoot > tr > td { color: #d1d5e8 !important; border-top: 0; }
+.table > thead > tr > th { color: #a855f7 !important; font-family: 'Share Tech Mono', monospace !important; font-size: 11px !important; text-transform: uppercase !important; letter-spacing: 1px !important; }
+.table > thead > tr.odd,
+.table > tbody > tr.odd,
+.table > tfoot > tr.odd { background-color: #0d0d20 !important; }
+.table > thead > tr.odd:hover,
+.table > tbody > tr.odd:hover,
+.table > tfoot > tr.odd:hover,
+.table > thead > tr.even:hover,
+.table > tbody > tr.even:hover,
+.table > tfoot > tr.even:hover { background-color: rgba(124, 58, 237, 0.1) !important; }
+.table-striped > tbody > tr:nth-of-type(2n+1) { background-color: #0d0d20 !important; }
+.table-bordered,
+.table-bordered > thead > tr > th,
+.table-bordered > tbody > tr > th,
+.table-bordered > tfoot > tr > th,
+.table-bordered > thead > tr > td,
+.table-bordered > tbody > tr > td,
+.table-bordered > tfoot > tr > td { border: 1px solid #2a2a4a !important; }
 
-.table > thead > tr > th {
-  background: rgba(124, 58, 237, 0.1) !important;
-  border-bottom: 2px solid #7c3aed !important;
-  color: #a855f7 !important;
-  font-family: 'Share Tech Mono', monospace !important;
-  font-size: 11px !important;
-  letter-spacing: 1px !important;
-  text-transform: uppercase !important;
-}
-
-.table > tbody > tr > td { border-top: 1px solid #1e1e3a !important; color: #d1d5e8 !important; }
-.table > tbody > tr:hover > td { background: rgba(124, 58, 237, 0.08) !important; }
-.table > tbody > tr.odd > td,
-.table > tbody > tr.even > td { background: transparent !important; }
-
-/* ---- BUTTONS ---- */
-.btn-primary {
-  background-color: #7c3aed !important;
-  border-color: #6d28d9 !important;
-  font-family: 'Rajdhani', sans-serif !important;
-  font-weight: 700 !important;
-  letter-spacing: 1px !important;
-  text-transform: uppercase !important;
-}
+/* Buttons */
+.btn-primary { background-color: #7c3aed !important; border-color: #6d28d9 !important; font-family: 'Rajdhani', sans-serif !important; font-weight: 700 !important; text-transform: uppercase !important; }
 .btn-primary:hover { background-color: #a855f7 !important; }
+.btn-default { background-color: #0f0f1a !important; color: #d1d5e8 !important; border: 1px solid #2a2a4a !important; }
 
-.btn-default {
-  background: transparent !important;
-  border-color: #1e1e3a !important;
+/* Forms — override #353c42 */
+input, select, select.form-control, .form-group .input-group-addon,
+.input-group .input-group-addon, .form-group input, .input-group input,
+.form-group textarea, .input-group textarea, .form-control,
+div.dataTables_wrapper div.dataTables_length select {
+  background-color: #0f0f1a !important;
   color: #d1d5e8 !important;
+  border: 1px solid #2a2a4a !important;
 }
+.dataTables_wrapper input[type="search"] { background-color: #0f0f1a !important; color: #d1d5e8 !important; }
+.dataTables_paginate .pagination li > a { background-color: #0f0f1a !important; border-color: #2a2a4a !important; color: #d1d5e8 !important; }
 
-/* ---- FORMS ---- */
-.form-control {
-  background-color: rgba(255,255,255,0.04) !important;
-  border: 1px solid #1e1e3a !important;
-  color: #d1d5e8 !important;
-  font-family: 'Share Tech Mono', monospace !important;
-}
+/* Footer and tabs — override #272c30 */
+.main-footer,
+.nav-tabs-custom { background-color: #0a0a14 !important; border-top-color: #2a2a4a !important; color: #6b7280 !important; font-family: 'Share Tech Mono', monospace !important; font-size: 11px !important; }
 
-.form-control:focus {
-  border-color: #7c3aed !important;
-  box-shadow: 0 0 0 2px rgba(124,58,237,0.2) !important;
-}
+/* Dropdowns — override #22282d, #30383f */
+.dropdown-menu { background-color: #0f0f1a !important; color: #d1d5e8 !important; border: 1px solid #2a2a4a !important; }
+.navbar-custom-menu > .navbar-nav > li > .dropdown-menu { background-color: #0f0f1a !important; }
 
-/* ---- LINKS ---- */
+/* Links */
 a { color: #a855f7 !important; }
 a:hover { color: #c4b5fd !important; text-decoration: none !important; }
-h4 { color: #a855f7 !important; }
 
-/* ---- FOOTER ---- */
-.main-footer {
-  background-color: #080810 !important;
-  border-top: 1px solid #1e1e3a !important;
-  color: #6b7280 !important;
-  font-family: 'Share Tech Mono', monospace !important;
-  font-size: 11px !important;
+/* Panel — override #3e464c */
+.panel, .panel-body, .panel-default > .panel-heading {
+  background-color: #0f0f1a !important;
+  border: 1px solid #2a2a4a !important;
+  color: #d1d5e8 !important;
 }
 
-/* ---- SCROLLBAR ---- */
+/* Overlay box — override rgba(53,60,66) */
+.box .overlay, .overlay-wrapper .overlay {
+  background-color: rgba(13, 13, 26, 0.85) !important;
+}
+
+/* Scrollbar */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: #0a0a14; }
 ::-webkit-scrollbar-thumb { background: #7c3aed; border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: #a855f7; }
 
-/* ---- CHART AXIS ---- */
-.tickLabel, div.tickLabel {
-  color: #a855f7 !important;
-  font-family: 'Share Tech Mono', monospace !important;
-  font-size: 11px !important;
-}
+/* Chart ticks */
+.graphs-ticks { color: #a855f7 !important; }
+.tickLabel, div.tickLabel { color: #a855f7 !important; font-family: 'Share Tech Mono', monospace !important; font-size: 11px !important; }
 
-/* ---- STATUS BADGES ---- */
+/* Select2 — override #353c42 */
+.select2 .select2-selection,
+.select2-dropdown { background-color: #0f0f1a !important; color: #d1d5e8 !important; border: 1px solid #2a2a4a !important; }
+.select2-dropdown .select2-search__field { background-color: #0a0a14 !important; color: #d1d5e8 !important; }
+
+/* Modal */
+.modal-content { background: #0f0f1a !important; }
+.modal-header { border-bottom-color: #2a2a4a !important; }
+.modal-footer { border-top-color: #2a2a4a !important; }
+
+/* Status badges */
 .label-success { background-color: #059669 !important; }
 .label-danger  { background-color: #dc2626 !important; }
 .label-warning { background-color: #7c3aed !important; }
 
-/* ---- NAVBAR ---- */
-.navbar-custom-menu .navbar-nav > li > a { color: #a855f7 !important; }
-.navbar-nav > .user-menu > .dropdown-menu { background-color: #0f0f1a !important; }
+/* User panel logo */
+.user-panel .image img {
+  content: url('https://raw.githubusercontent.com/hawintallzallie-cyber/houtech/main/custom-theme/transparent-logo.png') !important;
+  border-radius: 0 !important;
+}
+
+/* Login page background */
+.login-page {
+  background-image: linear-gradient(#0006, #0006), url("../../img/boxed-bg-dark.png") !important;
+  background-color: #080810 !important;
+}
+
+/* Code blocks */
+code, pre { background-color: #0a0a14 !important; color: #a855f7 !important; }
+
+/* Output terminal */
+#output { background: #0a0a14 !important; border-color: #2a2a4a !important; }
