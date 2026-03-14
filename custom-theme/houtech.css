@@ -1,5 +1,5 @@
 /* ============================================================
-   HOUTECH PI-HOLE THEME
+   HOUTECH PI-HOLE THEME v3
    ============================================================ */
 
 @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap');
@@ -8,56 +8,44 @@
   --houtech-purple:      #5b21b6;
   --houtech-purple-mid:  #7c3aed;
   --houtech-purple-glow: #a855f7;
-  --houtech-bg:          #080810;
-  --houtech-bg-card:     #0f0f1a;
-  --houtech-bg-sidebar:  #0a0a14;
-  --houtech-border:      #1e1e3a;
+  --houtech-bg:          #0d0d1a;
+  --houtech-bg-card:     #13132a;
+  --houtech-sidebar:     #0a0a14;
+  --houtech-border:      #2a2a4a;
   --houtech-text:        #d1d5e8;
   --houtech-text-muted:  #6b7280;
 }
 
-/* ---- GLOBAL ---- */
-body, .wrapper {
+/* ---- BODY & WRAPPER ---- */
+body {
   background-color: var(--houtech-bg) !important;
-  color: var(--houtech-text) !important;
   font-family: 'Rajdhani', sans-serif !important;
+  color: var(--houtech-text) !important;
 }
 
-/* Content area needs to be slightly lighter than pure black */
-.content-wrapper,
-#content-wrapper,
-.main-content,
-[id*="content"],
-[class*="content-wrapper"] {
-  background-color: #0d0d1a !important;
+.wrapper {
+  background-color: var(--houtech-bg) !important;
+}
+
+/* ---- CONTENT WRAPPER — must be visible ---- */
+.content-wrapper {
+  background-color: #111128 !important;
   color: var(--houtech-text) !important;
+  min-height: 100vh !important;
 }
 
 /* ---- HEADER ---- */
-.main-header {
-  border-bottom: 1px solid var(--houtech-purple-mid) !important;
-  box-shadow: 0 0 20px rgba(124, 58, 237, 0.3) !important;
-}
-
-.main-header .navbar {
-  background: var(--houtech-bg-card) !important;
-}
-
-/* ── Logo area: show HOUTECH text ── */
+.main-header,
+.main-header .navbar,
 .main-header .logo {
-  background: var(--houtech-bg-sidebar) !important;
+  background-color: var(--houtech-sidebar) !important;
   border-bottom: 1px solid var(--houtech-purple-mid) !important;
-  font-family: 'Share Tech Mono', monospace !important;
-  font-size: 15px !important;
-  letter-spacing: 3px !important;
-  text-transform: uppercase !important;
-  color: transparent !important;
-  font-size: 0 !important;
 }
 
-.main-header .logo .logo-lg,
-.main-header .logo .logo-mini {
+.main-header .logo {
+  font-family: 'Share Tech Mono', monospace !important;
   font-size: 0 !important;
+  letter-spacing: 3px !important;
 }
 
 .main-header .logo .logo-lg::before {
@@ -65,7 +53,6 @@ body, .wrapper {
   color: #ffffff !important;
   font-family: 'Share Tech Mono', monospace !important;
   font-size: 16px !important;
-  letter-spacing: 3px !important;
 }
 
 .main-header .logo .logo-lg::after {
@@ -73,10 +60,8 @@ body, .wrapper {
   color: var(--houtech-purple-glow) !important;
   font-family: 'Share Tech Mono', monospace !important;
   font-size: 16px !important;
-  letter-spacing: 3px !important;
 }
 
-/* ── Replace Pi raspberry logo with Houtech H logo ── */
 .main-header .logo img,
 .logo-lg img,
 .logo-mini img {
@@ -84,22 +69,15 @@ body, .wrapper {
 }
 
 /* ---- SIDEBAR ---- */
-.main-sidebar, .left-side {
-  background: var(--houtech-bg-sidebar) !important;
+.main-sidebar,
+.left-side {
+  background-color: var(--houtech-sidebar) !important;
   border-right: 1px solid var(--houtech-border) !important;
-}
-
-/* Sidebar status panel — replace raspberry with H logo */
-.user-panel .image img {
-  content: url('https://raw.githubusercontent.com/hawintallzallie-cyber/houtech/main/custom-theme/transparent-logo.png') !important;
-  border-radius: 0 !important;
-  background: transparent !important;
 }
 
 .sidebar-menu > li > a {
   color: var(--houtech-text-muted) !important;
   border-left: 3px solid transparent !important;
-  transition: all 0.2s ease !important;
   font-family: 'Rajdhani', sans-serif !important;
   font-weight: 600 !important;
   letter-spacing: 1px !important;
@@ -114,62 +92,46 @@ body, .wrapper {
   border-left: 3px solid var(--houtech-purple-mid) !important;
 }
 
-/* ---- STAT BOXES — replace bright colors with dark purple ---- */
-.info-box,
-.info-box.bg-aqua,
-.info-box.bg-red,
-.info-box.bg-yellow,
-.info-box.bg-green,
-.info-box.bg-blue,
-.info-box.bg-orange,
-.info-box[class*="bg-"] {
-  background: #130d2e !important;
+/* ---- STAT BOXES — replace bright colors ---- */
+.small-box.bg-aqua,
+.small-box.bg-red,
+.small-box.bg-yellow,
+.small-box.bg-green,
+.small-box.bg-blue,
+.small-box.bg-orange,
+.small-box[class*="bg-"] {
+  background: #1a1040 !important;
   border: 1px solid var(--houtech-purple-mid) !important;
   border-left: 4px solid var(--houtech-purple-glow) !important;
-  border-radius: 6px !important;
   box-shadow: 0 4px 20px rgba(91, 33, 182, 0.3) !important;
 }
 
-.info-box-icon,
-.info-box-icon.bg-aqua,
-.info-box-icon.bg-red,
-.info-box-icon.bg-yellow,
-.info-box-icon.bg-green,
-.info-box-icon.bg-blue,
-.info-box-icon.bg-orange,
-.info-box-icon[class*="bg-"] {
-  background: rgba(91, 33, 182, 0.4) !important;
+.small-box .inner p {
   color: var(--houtech-purple-glow) !important;
-}
-
-/* Big numbers on stat cards — WHITE */
-.info-box-number {
-  color: #ffffff !important;
-  font-family: 'Share Tech Mono', monospace !important;
-  font-size: 28px !important;
-  font-weight: 700 !important;
-}
-
-/* Labels and links inside stat cards */
-.info-box-text,
-.info-box a,
-.info-box small,
-.info-box .progress-description {
-  color: var(--houtech-purple-glow) !important;
+  font-family: 'Rajdhani', sans-serif !important;
+  font-weight: 600 !important;
   text-transform: uppercase !important;
   letter-spacing: 1px !important;
-  font-size: 11px !important;
 }
 
-/* ---- CHART AXIS NUMBERS & TIMESTAMPS — bright purple ---- */
-.tickLabel,
-div.tickLabel,
-.flot-tick-label,
-.flot-x-axis .flot-tick-label,
-.flot-y-axis .flot-tick-label {
-  color: var(--houtech-purple-glow) !important;
+.small-box .inner h3,
+.small-box .inner h3 span {
+  color: #ffffff !important;
   font-family: 'Share Tech Mono', monospace !important;
-  font-size: 11px !important;
+}
+
+.small-box .icon {
+  color: rgba(168, 85, 247, 0.2) !important;
+}
+
+.small-box-footer {
+  background: rgba(91, 33, 182, 0.25) !important;
+  color: var(--houtech-purple-glow) !important;
+}
+
+.small-box-footer:hover {
+  background: rgba(91, 33, 182, 0.4) !important;
+  color: #ffffff !important;
 }
 
 /* ---- BOXES / CARDS ---- */
@@ -177,8 +139,8 @@ div.tickLabel,
   background: var(--houtech-bg-card) !important;
   border: 1px solid var(--houtech-border) !important;
   border-top: 2px solid var(--houtech-purple-mid) !important;
+  box-shadow: 0 2px 15px rgba(0,0,0,0.4) !important;
   border-radius: 4px !important;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.4) !important;
 }
 
 .box-header {
@@ -194,6 +156,13 @@ div.tickLabel,
 .box-body {
   background: transparent !important;
   color: var(--houtech-text) !important;
+}
+
+/* ---- CHART AXIS LABELS ---- */
+.tickLabel, div.tickLabel {
+  color: var(--houtech-purple-glow) !important;
+  font-family: 'Share Tech Mono', monospace !important;
+  font-size: 11px !important;
 }
 
 /* ---- TABLES ---- */
@@ -243,16 +212,12 @@ div.tickLabel,
   color: var(--houtech-text) !important;
 }
 
-.btn-danger { background: #dc2626 !important; border-color: #b91c1c !important; }
-
 /* ---- FORMS ---- */
 .form-control {
   background: rgba(255,255,255,0.04) !important;
   border: 1px solid var(--houtech-border) !important;
   color: var(--houtech-text) !important;
-  border-radius: 3px !important;
   font-family: 'Share Tech Mono', monospace !important;
-  font-size: 13px !important;
 }
 
 .form-control:focus {
@@ -278,12 +243,6 @@ div.tickLabel,
   border-top: 2px solid var(--houtech-purple-mid) !important;
 }
 
-/* ---- ALERTS ---- */
-.alert-info    { background: rgba(6,182,212,0.1) !important; border-color: #06b6d4 !important; color: #06b6d4 !important; }
-.alert-success { background: rgba(16,185,129,0.1) !important; border-color: #10b981 !important; color: #34d399 !important; }
-.alert-danger,
-.alert-warning { background: rgba(220,38,38,0.1) !important; border-color: #dc2626 !important; color: #f87171 !important; }
-
 /* ---- LINKS ---- */
 a { color: var(--houtech-purple-glow) !important; }
 a:hover { color: #c4b5fd !important; text-decoration: none !important; }
@@ -301,7 +260,7 @@ a:hover { color: #c4b5fd !important; text-decoration: none !important; }
 
 /* ---- FOOTER ---- */
 .main-footer {
-  background: var(--houtech-bg-card) !important;
+  background: var(--houtech-sidebar) !important;
   border-top: 1px solid var(--houtech-border) !important;
   color: var(--houtech-text-muted) !important;
   font-family: 'Share Tech Mono', monospace !important;
@@ -312,4 +271,14 @@ a:hover { color: #c4b5fd !important; text-decoration: none !important; }
 .sidebar-menu > li.active > a .fa {
   color: var(--houtech-purple-glow) !important;
   text-shadow: 0 0 8px rgba(168, 85, 247, 0.6) !important;
+}
+
+/* ---- USER PANEL (sidebar status) ---- */
+.user-panel .image img {
+  content: url('https://raw.githubusercontent.com/hawintallzallie-cyber/houtech/main/custom-theme/transparent-logo.png') !important;
+  border-radius: 0 !important;
+}
+
+.user-panel .info a {
+  color: var(--houtech-purple-glow) !important;
 }
