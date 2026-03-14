@@ -17,10 +17,20 @@
 }
 
 /* ---- GLOBAL ---- */
-body, .wrapper, .content-wrapper {
+body, .wrapper {
   background-color: var(--houtech-bg) !important;
   color: var(--houtech-text) !important;
   font-family: 'Rajdhani', sans-serif !important;
+}
+
+/* Content area needs to be slightly lighter than pure black */
+.content-wrapper,
+#content-wrapper,
+.main-content,
+[id*="content"],
+[class*="content-wrapper"] {
+  background-color: #0d0d1a !important;
+  color: var(--houtech-text) !important;
 }
 
 /* ---- HEADER ---- */
