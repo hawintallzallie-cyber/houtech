@@ -9,6 +9,9 @@ set -e
 LOG="/var/log/houtech-setup.log"
 SCRIPT_DIR="/opt/houtech-setup"
 
+# Trap any error and log the line number before exiting
+trap 'log "ERROR: Setup failed at line $LINENO — check log above for details."; exit 1' ERR
+
 # Ensure setup directory always exists with assets from GitHub
 mkdir -p /opt/houtech-setup/custom-theme
 curl -fsSL "https://raw.githubusercontent.com/hawintallzallie-cyber/houtech/main/custom-theme/houtech.css" \
@@ -35,13 +38,18 @@ log "[0/5] Configuring power resilience and auto-recovery..."
 # Detect the primary non-root user
 MAIN_USER=$(getent passwd {1000..1100} | head -1 | cut -d: -f1)
 if [ -n "$MAIN_USER" ]; then
-  mkdir -p /etc/systemd/system/getty@tty1.service.d
-  cat > /etc/systemd/system/getty@tty1.service.d/autologin.conf <<EOF
+  AUTOLOGIN_FILE="/etc/systemd/system/getty@tty1.service.d/autologin.conf"
+  if grep -q "autologin $MAIN_USER" "$AUTOLOGIN_FILE" 2>/dev/null; then
+    log "Auto-login already configured for $MAIN_USER — skipping."
+  else
+    mkdir -p /etc/systemd/system/getty@tty1.service.d
+    cat > "$AUTOLOGIN_FILE" <<EOF
 [Service]
 ExecStart=
 ExecStart=-/sbin/agetty --autologin $MAIN_USER --noclear %I \$TERM
 EOF
-  log "Auto-login configured for user: $MAIN_USER"
+    log "Auto-login configured for user: $MAIN_USER"
+  fi
 fi
 
 # ── 0b. Disable sleep, suspend, hibernate, and hybrid-sleep ──
@@ -58,8 +66,9 @@ sed -i 's/^#*PowerKeyAction=.*/PowerKeyAction=ignore/' /etc/systemd/logind.conf
 # Append if lines didn't exist
 grep -q "^HandleLidSwitch=" /etc/systemd/logind.conf || echo "HandleLidSwitch=ignore" >> /etc/systemd/logind.conf
 grep -q "^IdleAction=" /etc/systemd/logind.conf       || echo "IdleAction=ignore"       >> /etc/systemd/logind.conf
-systemctl restart systemd-logind 2>/dev/null || true
-log "Lid close, idle, and power key actions disabled."
+# Reload daemon config only — do NOT restart logind (it kills the active session/display)
+systemctl daemon-reload 2>/dev/null || true
+log "Lid close, idle, and power key actions disabled (takes effect on next boot)."
 
 # ── 0d. Disable screen blanking and DPMS (display power saving) ──
 if command -v xset &>/dev/null; then
@@ -203,21 +212,27 @@ fi
 # Detect if using NetworkManager or netplan or systemd-networkd
 if command -v nmcli &>/dev/null; then
   log "Using NetworkManager for static IP..."
-  # Remove existing houtech-static connection if present
-  nmcli con delete "houtech-static" 2>/dev/null || true
-  nmcli con add type ethernet \
-    con-name "houtech-static" \
-    ifname "$ETH_IFACE" \
-    ipv4.method manual \
-    ipv4.addresses "${STATIC_IP}/24" \
-    ipv4.gateway "$GATEWAY" \
-    ipv4.dns "127.0.0.1,1.1.1.1" \
-    connection.autoconnect yes \
-    connection.autoconnect-priority 100
-  nmcli con up "houtech-static"
+  # Check if already configured with the correct IP
+  EXISTING_IP=$(nmcli -t -f IP4.ADDRESS con show "houtech-static" 2>/dev/null | cut -d: -f2 | cut -d/ -f1)
+  if [ "$EXISTING_IP" = "$STATIC_IP" ]; then
+    log "Static IP ${STATIC_IP} already configured in NetworkManager — skipping."
+  else
+    nmcli con delete "houtech-static" 2>/dev/null || true
+    nmcli con add type ethernet \
+      con-name "houtech-static" \
+      ifname "$ETH_IFACE" \
+      ipv4.method manual \
+      ipv4.addresses "${STATIC_IP}/24" \
+      ipv4.gateway "$GATEWAY" \
+      ipv4.dns "127.0.0.1,1.1.1.1" \
+      connection.autoconnect yes \
+      connection.autoconnect-priority 100
+    nmcli con up "houtech-static"
+  fi
 
 elif [ -d /etc/netplan ]; then
   log "Using Netplan for static IP..."
+  # cat > overwrites so this is always idempotent
   cat > /etc/netplan/99-houtech-static.yaml <<EOF
 network:
   version: 2
@@ -236,7 +251,11 @@ EOF
 
 else
   log "Using /etc/network/interfaces for static IP..."
-  cat >> /etc/network/interfaces <<EOF
+  # Guard against duplicate entries on re-run
+  if grep -q "Houtech static IP" /etc/network/interfaces 2>/dev/null; then
+    log "Static IP already present in /etc/network/interfaces — skipping."
+  else
+    cat >> /etc/network/interfaces <<EOF
 
 # Houtech static IP
 auto $ETH_IFACE
@@ -246,8 +265,9 @@ iface $ETH_IFACE inet static
   gateway $GATEWAY
   dns-nameservers 127.0.0.1 1.1.1.1
 EOF
-  ifdown "$ETH_IFACE" 2>/dev/null || true
-  ifup "$ETH_IFACE" 2>/dev/null || true
+    ifdown "$ETH_IFACE" 2>/dev/null || true
+    ifup "$ETH_IFACE" 2>/dev/null || true
+  fi
 fi
 
 log "Static IP ${STATIC_IP} configured on $ETH_IFACE (gateway: $GATEWAY)"
@@ -288,19 +308,22 @@ fi
 log "Installing and configuring UFW firewall..."
 apt-get install -y -qq ufw
 
-ufw --force reset
-ufw default deny incoming
-ufw default allow outgoing
-
-ufw allow 53/tcp   comment 'Pi-hole DNS TCP'
-ufw allow 53/udp   comment 'Pi-hole DNS UDP'
-ufw allow 80/tcp   comment 'HTTP'
-ufw allow 8080/tcp comment 'Pi-hole Admin UI'
-ufw allow 3389/tcp comment 'XRDP Remote Desktop'
-
-ufw --force enable
-log "UFW firewall active. Allowed: 53 (DNS), 80 (HTTP), 8080 (Pi-hole UI), 3389 (RDP)"
-log "All other inbound ports are BLOCKED."
+# Check if UFW is already active with the correct rules before resetting
+if ufw status | grep -q "8080/tcp" && ufw status | grep -q "Status: active"; then
+  log "UFW already configured with correct rules — skipping reset."
+else
+  ufw --force reset
+  ufw default deny incoming
+  ufw default allow outgoing
+  ufw allow 53/tcp   comment 'Pi-hole DNS TCP'
+  ufw allow 53/udp   comment 'Pi-hole DNS UDP'
+  ufw allow 80/tcp   comment 'HTTP'
+  ufw allow 8080/tcp comment 'Pi-hole Admin UI'
+  ufw allow 3389/tcp comment 'XRDP Remote Desktop'
+  ufw --force enable
+  log "UFW firewall active. Allowed: 53 (DNS), 80 (HTTP), 8080 (Pi-hole UI), 3389 (RDP)"
+  log "All other inbound ports are BLOCKED."
+fi
 
 # ── 2c. Install and configure Fail2Ban ──
 log "Installing Fail2Ban..."
@@ -374,12 +397,38 @@ log "[3/6] Installing Docker..."
 if command -v docker &>/dev/null; then
   log "Docker already installed — skipping."
 else
+  log "Installing Docker dependencies..."
   apt-get update -qq
   apt-get install -y -qq ca-certificates curl gnupg lsb-release
-  curl -fsSL https://get.docker.com | sh
+
+  log "Adding Docker GPG key and apt repository..."
+  install -m 0755 -d /etc/apt/keyrings
+  curl -fsSL https://download.docker.com/linux/debian/gpg \
+    -o /etc/apt/keyrings/docker.asc
+  chmod a+r /etc/apt/keyrings/docker.asc
+
+  # Debian 13 Trixie is not yet in Docker's repo list — use bookworm packages
+  # which are fully compatible. Detect version and fall back to bookworm if needed.
+  DEBIAN_CODENAME=$(. /etc/os-release && echo "$VERSION_CODENAME")
+  if [ "$DEBIAN_CODENAME" = "trixie" ] || [ "$DEBIAN_CODENAME" = "forky" ]; then
+    DOCKER_CODENAME="bookworm"
+    log "Debian $DEBIAN_CODENAME detected — using Docker bookworm repo for compatibility."
+  else
+    DOCKER_CODENAME="$DEBIAN_CODENAME"
+  fi
+
+  echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] \
+https://download.docker.com/linux/debian $DOCKER_CODENAME stable" \
+    | tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+  apt-get update -qq
+  apt-get install -y -qq \
+    docker-ce docker-ce-cli containerd.io \
+    docker-buildx-plugin docker-compose-plugin
+
   systemctl enable docker
   systemctl start docker
-  log "Docker installed successfully."
+  log "Docker installed successfully (repo: $DOCKER_CODENAME)."
 fi
 
 # ------------------------------------------------------------
@@ -387,23 +436,26 @@ fi
 # ------------------------------------------------------------
 log "[4/6] Installing XRDP for remote desktop..."
 
-apt-get install -y -qq xrdp
+if command -v xrdp &>/dev/null && systemctl is-active --quiet xrdp; then
+  log "XRDP already installed and running — skipping."
+else
+  apt-get install -y -qq xrdp
 
-# Allow XRDP through UFW if active
-if command -v ufw &>/dev/null && ufw status | grep -q "active"; then
-  ufw allow 3389/tcp
-  log "UFW rule added for RDP port 3389"
+  # Allow XRDP through UFW if active
+  if command -v ufw &>/dev/null && ufw status | grep -q "active"; then
+    ufw allow 3389/tcp
+    log "UFW rule added for RDP port 3389"
+  fi
+
+  # Add xrdp user to ssl-cert group (required for certificate access)
+  usermod -aG ssl-cert xrdp 2>/dev/null || true
+
+  # Enable and start XRDP service
+  systemctl enable xrdp
+  systemctl restart xrdp
+  log "XRDP installed and running on port 3389"
 fi
-
-# Add xrdp user to ssl-cert group (required for certificate access)
-usermod -aG ssl-cert xrdp 2>/dev/null || true
-
-# Enable and start XRDP service
-systemctl enable xrdp
-systemctl restart xrdp
-
-log "XRDP installed and running on port 3389"
-log "Connect via: mstsc (Windows) or Remmina (Linux) → 192.168.77.77:3389"
+log "Connect via: mstsc (Windows) or Remmina (Linux) → ${STATIC_IP}:3389"
 
 # ------------------------------------------------------------
 # STEP 4: DEPLOY PI-HOLE IN DOCKER
@@ -413,33 +465,39 @@ log "[5/6] Deploying Pi-hole in Docker..."
 mkdir -p /opt/pihole/etc-pihole
 mkdir -p /opt/pihole/etc-dnsmasq.d
 
-# Stop any existing pihole container
-docker stop pihole 2>/dev/null || true
-docker rm pihole 2>/dev/null || true
+# Check if Pi-hole is already running and healthy
+PIHOLE_RUNNING=$(docker inspect -f '{{.State.Running}}' pihole 2>/dev/null || echo "false")
+if [ "$PIHOLE_RUNNING" = "true" ]; then
+  log "Pi-hole container already running — skipping deployment."
+else
+  # Stop and remove any stopped/crashed container before re-creating
+  docker stop pihole 2>/dev/null || true
+  docker rm   pihole 2>/dev/null || true
 
-docker run -d \
-  --name pihole \
-  --restart unless-stopped \
-  -e TZ="America/Chicago" \
-  -e WEBPASSWORD="houtech2024" \
-  -e PIHOLE_DNS_1="1.1.1.1" \
-  -e PIHOLE_DNS_2="8.8.8.8" \
-  -v /opt/pihole/etc-pihole:/etc/pihole \
-  -v /opt/pihole/etc-dnsmasq.d:/etc/dnsmasq.d \
-  -p 53:53/tcp \
-  -p 53:53/udp \
-  -p 8080:80 \
-  --dns=127.0.0.1 \
-  --dns=1.1.1.1 \
-  pihole/pihole:latest
+  docker run -d \
+    --name pihole \
+    --restart unless-stopped \
+    -e TZ="America/Chicago" \
+    -e WEBPASSWORD="houtech2024" \
+    -e PIHOLE_DNS_1="1.1.1.1" \
+    -e PIHOLE_DNS_2="8.8.8.8" \
+    -v /opt/pihole/etc-pihole:/etc/pihole \
+    -v /opt/pihole/etc-dnsmasq.d:/etc/dnsmasq.d \
+    -p 53:53/tcp \
+    -p 53:53/udp \
+    -p 8080:80 \
+    --dns=127.0.0.1 \
+    --dns=1.1.1.1 \
+    pihole/pihole:latest
 
-log "Pi-hole container started. Waiting 20 seconds for initialization..."
-sleep 20
+  log "Pi-hole container started. Waiting 20 seconds for initialization..."
+  sleep 20
 
-# Force set Pi-hole web password
-docker exec pihole pihole setpassword houtech2024 2>/dev/null || \
-docker exec pihole pihole -a -p houtech2024 2>/dev/null || true
-log "Pi-hole web password set to: houtech2024"
+  # Force set Pi-hole web password
+  docker exec pihole pihole setpassword houtech2024 2>/dev/null || \
+  docker exec pihole pihole -a -p houtech2024 2>/dev/null || true
+  log "Pi-hole web password set to: houtech2024"
+fi
 
 # ------------------------------------------------------------
 # STEP 4b: INJECT HOUTECH CUSTOM THEME INTO PI-HOLE
@@ -524,8 +582,11 @@ fi
 
 log "[6/6] Installing Pi-hole watchdog service..."
 
-# Create a systemd service that checks Pi-hole every 60s and restarts if down
-cat > /etc/systemd/system/houtech-watchdog.service <<EOF
+if systemctl is-active --quiet houtech-watchdog; then
+  log "Pi-hole watchdog already installed and running — skipping."
+else
+  # Create a systemd service that checks Pi-hole every 60s and restarts if down
+  cat > /etc/systemd/system/houtech-watchdog.service <<EOF
 [Unit]
 Description=Houtech Pi-hole Watchdog
 After=docker.service network-online.target
@@ -547,10 +608,11 @@ done'
 WantedBy=multi-user.target
 EOF
 
-systemctl daemon-reload
-systemctl enable houtech-watchdog
-systemctl start houtech-watchdog
-log "Pi-hole watchdog service installed and running."
+  systemctl daemon-reload
+  systemctl enable houtech-watchdog
+  systemctl start houtech-watchdog
+  log "Pi-hole watchdog service installed and running."
+fi
 
 log "============================================"
 log " HOUTECH SETUP COMPLETE"
